@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -6,7 +8,13 @@ public class Player : MonoBehaviour
     //private const float WALL_CHECK_DISTANCE = 0.2f;
     public float speed = 5;
     public float jumpUp = 1;
+    public float power = 5f;
     public Vector3 direction;
+    public GameObject slash;
+    public GameObject hitLazer;
+
+    public GameObject Shadow1;
+    List<GameObject> shadow = new List<GameObject>();
 
     Animator pAnimator;
     Rigidbody2D pRig2D;
@@ -41,6 +49,10 @@ public class Player : MonoBehaviour
             sp.flipX = true;
             pAnimator.SetBool("Run", true);
             isRight = -1;
+            for(int i = 0; i <shadow.Count; i++)
+            {
+                shadow[i].GetComponent<SpriteRenderer>().flipX = sp.flipX;
+            }
         }
         else if(direction.x >0)
         {
@@ -48,11 +60,31 @@ public class Player : MonoBehaviour
             sp.flipX = false;
             pAnimator.SetBool("Run", true);
             isRight = 1;
+            for(int i = 0; i <shadow.Count; i++)
+            {
+                shadow[i].GetComponent<SpriteRenderer>().flipX = sp.flipX;
+            }
         }
         else if(direction.x == 0)
         {
             pAnimator.SetBool("Run", false);
+            // 그림자 제거
+            for(int i = 0; i < shadow.Count; i++)
+            {
+                Destroy(shadow[i]);
+                shadow.RemoveAt(i); // 리스트공간 제거
+            }
         }
+
+        if(Input.GetMouseButtonDown(0))
+        {
+            pAnimator.SetTrigger("Attack");
+        }
+        if(Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            TimeController.Instance.SetSlowMotion(true);
+        }
+        
     }
     void Update()
     {
@@ -145,6 +177,35 @@ public class Player : MonoBehaviour
         // Destroy(go, 1f);
         // 위에처럼 해도되고, 아니면  dust 오브젝트에 Dust.cs 넣어서 그냥 삭제로직 관리해도 될듯/
         Instantiate(dust, transform.position + new Vector3(-0.114f, -0.467f,0), Quaternion.identity);
+    }
+    public void AttSlash()
+    {
+        if(sp.flipX == false)
+        {
+            pRig2D.AddForce(Vector2.right * power, ForceMode2D.Impulse);
+            GameObject go = Instantiate(slash, transform.position, Quaternion.identity);
+            //go.GetComponent<SpriteRenderer>().flipX = sp.flipX;
+        }
+        else
+        {
+            pRig2D.AddForce(Vector2.left * power, ForceMode2D.Impulse);
+            GameObject go = Instantiate(slash, transform.position, Quaternion.identity);
+            //go.GetComponent<SpriteRenderer>().flipX = sp.flipX;
+        }
+        Instantiate(hitLazer, transform.position, Quaternion.identity);
+    }
+    public void RundShadow()
+    {
+        //최대 6개 그림자 생성
+        if(shadow.Count < 6)
+        {
+            // 그림자 생성
+            GameObject go = Instantiate(Shadow1, transform.position, Quaternion.identity);
+            // 속도 설정
+            go.GetComponent<Shadow>().TwSpeed = 10 - shadow.Count;
+            // List에 추가
+            shadow.Add(go);
+        }
     }
 
 }
